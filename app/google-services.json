@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "54088337090",
+    "firebase_url": "https://unity-curling-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "unity-curling-test",
+    "storage_bucket": "unity-curling-test.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:54088337090:android:1d7caa512c4b3929801d5b",
+        "android_client_info": {
+          "package_name": "com.example.temicurling"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjGKybrV6fj2r-1JH5yG5LA28zaa4BPRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:54088337090:android:c6e398249a2fdfdb801d5b",
+        "android_client_info": {
+          "package_name": "com.ksh.Temi_curling"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjGKybrV6fj2r-1JH5yG5LA28zaa4BPRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

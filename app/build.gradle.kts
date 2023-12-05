@@ -39,5 +39,12 @@ dependencies {
     testImplementation("junit:junit:4.12")
     androidTestImplementation("androidx.test.ext:junit:1.1.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.2.0")
+<<<<<<< Updated upstream
     implementation("com.robotemi:sdk:0.10.77")
+=======
+    implementation("com.robotemi:sdk:1.131.4")
+    implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-database:20.3.0")
+>>>>>>> Stashed changes
 }
