@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
                         }, 3000); // 회전 후 대기 시간
                     }
                 }, 0);
+                robot.turnBy(90, 1.0f);
             }
         });
     }
