@@ -22,65 +22,35 @@ import com.robotemi.sdk.Robot;
 import com.robotemi.sdk.listeners.OnRobotReadyListener;
 
 public class MainActivity extends AppCompatActivity {
-    Button btn;
-    Handler handler;
-    Robot robot;
-
+    private ForwardAction forwardAction;
+    private Handler handler;
+    Robot robot = Robot.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        btn = findViewById(R.id.startbutton);
-        handler = new Handler(Looper.getMainLooper());
-        robot = Robot.getInstance();
 
+        // Handler와 ForwardAction 초기화
+        handler = new Handler();
+        forwardAction = new ForwardAction(handler, robot);
+        int ms = 10000;
+
+        // 버튼 클릭 이벤트 설정
+        Button btn = findViewById(R.id.btn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Temi를 90도 회전시키는 함수 호출
-                robot.turnBy(90, 1.0f);
+                // 첫 번째 움직임 시작
+                forwardAction.moveForwardForDuration(ms);
 
-                // 회전 완료까지 대기
+                // 첫 번째 움직임 후 지연을 주고 두 번째 움직임 시작
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        // 2초 대기
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                // 500ms 간격으로 작업을 반복하기 위한 Runnable
-                                Runnable skidJoyRunnable = new Runnable() {
-                                    float k = 1;
-
-                                    @Override
-                                    public void run() {
-                                        // run 반복 시 a만큼 감소
-                                        float a = 0.05F;
-
-                                        robot.skidJoy(k, 0);
-                                        k = k - a;
-
-                                        // 500ms 후에 다시 실행
-                                        handler.postDelayed(this, 500);
-                                    }
-                                };
-
-                                // 500ms 후에 직진을 시작
-                                handler.postDelayed(skidJoyRunnable, 500);
-
-                                // 직진 완료까지 대기 (예: 10초)
-                                handler.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        handler.removeCallbacks(skidJoyRunnable);
-                                    }
-                                }, 10000); // 총 이동시간
-                            }
-                        }, 3000); // 회전 후 대기 시간
+                        forwardAction.moveForwardForDuration(ms);
                     }
-                }, 0);
-                robot.turnBy(90, 1.0f);
+                }, ms + 500); // 첫 번째 움직임 지속 시간 + 추가 지연
             }
         });
     }

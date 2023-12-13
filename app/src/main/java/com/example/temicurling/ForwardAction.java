@@ -7,15 +7,15 @@ import android.os.Looper;
 
 import com.robotemi.sdk.Robot;
 public class ForwardAction {
-    private Handler handler;
-    private Robot robot;
+    private static Handler handler;
+    private static Robot robot;
 
     public ForwardAction(Handler handler, Robot robot) {
         this.handler = handler;
         this.robot = robot;
     }
 
-    public void moveForwardForDuration(int durationMillis) {
+    public static void moveForwardForDuration(int durationMillis) {
         // 500ms 간격으로 작업을 반복하기 위한 Runnable
         Runnable skidJoyRunnable = new Runnable() {
             float k = 1;
@@ -23,7 +23,7 @@ public class ForwardAction {
             @Override
             public void run() {
                 // run 반복 시 a만큼 감소
-                float a = 0.05F;
+                float a = (0.5F / durationMillis * 1000);
 
                 robot.skidJoy(k, 0);
                 k = k - a;

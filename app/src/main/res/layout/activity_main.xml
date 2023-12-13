@@ -13,13 +13,13 @@
         android:layout_height="wrap_content"
         android:text="Temi Curling"
         android:textSize="30pt"
-        app:layout_constraintBottom_toTopOf="@+id/startbutton"
+        app:layout_constraintBottom_toTopOf="@+id/btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/startbutton"
+        android:id="@+id/btn"
         android:layout_width="240dp"
         android:layout_height="120dp"
         android:text="시작하기"
