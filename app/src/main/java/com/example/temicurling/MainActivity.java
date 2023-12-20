@@ -25,11 +25,17 @@ public class MainActivity extends AppCompatActivity {
     private ForwardAction forwardAction;
     private Handler handler;
     Robot robot = Robot.getInstance();
+    private int currentAngle = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+
+//        firebase test
+        FirebaseReader f = new FirebaseReader("Stone6", this);
+        f.Read();
 
         // Handler와 ForwardAction 초기화
         handler = new Handler();
@@ -53,5 +59,9 @@ public class MainActivity extends AppCompatActivity {
                 }, ms + 500); // 첫 번째 움직임 지속 시간 + 추가 지연
             }
         });
+    }
+
+    public void printtest(){
+        Log.d("debug","eventtest");
     }
 }
