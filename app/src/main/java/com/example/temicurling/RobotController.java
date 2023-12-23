@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.robotemi.sdk.Robot;
@@ -22,6 +23,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import org.jetbrains.annotations.Contract;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,15 +40,32 @@ public class RobotController implements OnDetectionStateChangedListener {
     private ForwardAction forwardAction;
     private Robot robot;
     private Handler handler;
+    private String robotId;
+    private DatabaseReference robotRef;
     Queue<Integer> queue = new LinkedList<>();
+
+    private Map<Integer, String> robotIdToNameMap = new HashMap<>();
+    private void initializeRobotNames(){
+        robotIdToNameMap.put(1, "Stone1");
+        robotIdToNameMap.put(2, "Stone2");
+        robotIdToNameMap.put(3, "Stone3");
+        robotIdToNameMap.put(4, "Stone4");
+        robotIdToNameMap.put(5, "Stone5");
+        robotIdToNameMap.put(6, "Stone6");
+    }
+
+    private Map<Integer, Robot> robots = new HashMap<>();
 
 
     // 로봇과의 통신을 위한 메서드 및 변수
 
     public RobotController(Handler handler, Robot robot) {
         this.robot = robot;
+        this.robotId = robotId;
+        this.robots = robots;
         this.handler = handler;
         this.forwardAction = new ForwardAction(handler, robot);
+        initializeRobotNames();
         robot.addOnDetectionStateChangedListener(this);
         setupFirebaseListeners();
     }
@@ -53,9 +73,10 @@ public class RobotController implements OnDetectionStateChangedListener {
     private void setupFirebaseListeners(){
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
 
+        robotRef = FirebaseDatabase.getInstance().getReference("temi/" + robotId);
         for (int i = 1; i <= 6; i++){
             final int robotNumber = i; // 로봇의 각 번호
-            databaseReference.child("robot" + robotNumber).addValueEventListener(new ValueEventListener(){
+            robotRef.child("Stone" + robotNumber).addValueEventListener(new ValueEventListener(){
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot){
                     try {
@@ -64,7 +85,7 @@ public class RobotController implements OnDetectionStateChangedListener {
                         String outString = dataSnapshot.child("out").getValue(String.class);
                         String timeString = dataSnapshot.child("time").getValue(String.class);
 
-                        int angle = Integer.parseInt(angleString);
+                        float angle = Float.parseFloat(angleString);
                         float distance = Float.parseFloat(distanceString);
                         boolean out = Boolean.parseBoolean(outString);
                         float time = Float.parseFloat(timeString);
@@ -95,7 +116,7 @@ public class RobotController implements OnDetectionStateChangedListener {
     }
 
     public void resetPosition(int robotNumber) {
-        robot.goTo("Home");
+        robot.goTo("home base");
     }
 
     // distance 를 durationMillis로 바꾸는 메소드
@@ -104,16 +125,16 @@ public class RobotController implements OnDetectionStateChangedListener {
         return (int)(distance * 1000);
     }
 
-    private void rotateRobot(int robotNumber, int angle){
-       Robot specificRobot = getRobotInstance(robotNumber);
+    private void rotateRobot(String stoneName, int angle){
+       Robot specificRobot = getRobotInstanceByName(stoneName);
        if(specificRobot != null){
            specificRobot.turnBy(angle, 1.0f);
        }
     }
 
-    private void addActionToQueue(int robotNumber, int angle, float distance, float time){
+    private void addActionToQueue(int stoneNumber, float angle, float distance, float time){
         Map<String, Object> actionData = new HashMap<>();
-        actionData.put("robotNumber", robotNumber);
+        actionData.put("robotNumber", stoneNumber);
         actionData.put("angle", angle);
         actionData.put("distance", distance);
         actionData.put("time", time);
@@ -131,18 +152,21 @@ public class RobotController implements OnDetectionStateChangedListener {
             Comparator.comparingInt(a -> (Integer) a.get("time"))
     );
     private void executeAction(Map<String, Object> actionData){
-        int robotNumber = (Integer) actionData.get("robotNumber");
+        String stoneName = (String) actionData.get("stoneNumber");
         int angle = (Integer) actionData.get("angle");
         float distance = (Float) actionData.get("distance");
 
-        rotateRobot(robotNumber, angle);
+        rotateRobot(stoneName, angle);
         forwardAction.moveForwardForDuration(convertDistanceToDurationMillis(distance));
     }
 
 
-    private Robot getRobotInstance(int robotNumber){
-        switch (robotNumber){
-            case 1://수정중
+    @Nullable
+    private Robot getRobotInstanceByName(String stoneName){
+        for (Map.Entry<Integer, String> entry : robotIdToNameMap.entrySet()){
+            if (entry.getValue().equals(stoneName)){
+                return robots.get(entry.getKey());
+            }
         }
         return null;
     }

@@ -43,7 +43,7 @@ dependencies {
 
 
     implementation("com.robotemi:sdk:1.131.4")
-    implementation(platform("com.google.firebase:firebase-bom:32.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-database:20.3.0")
 }
