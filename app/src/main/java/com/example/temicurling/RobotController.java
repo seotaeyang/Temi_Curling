@@ -5,17 +5,14 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.List;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.robotemi.sdk.Robot;
-import com.robotemi.sdk.navigation.model.SpeedLevel;
-import com.robotemi.sdk.navigation.model.*;
 import com.robotemi.sdk.listeners.OnDetectionStateChangedListener;
 
 import com.google.firebase.database.DataSnapshot;
@@ -23,15 +20,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import org.jetbrains.annotations.Contract;
+import com.robotemi.sdk.listeners.OnMovementStatusChangedListener;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
 @RequiresApi(api = Build.VERSION_CODES.N)
-public class RobotController implements OnDetectionStateChangedListener {
+public class RobotController implements OnDetectionStateChangedListener, OnMovementStatusChangedListener {
     // 로봇의 현재 상태를 나타내는 변수
     private int angle = 90;
     private float distance = 0.0F;
@@ -42,9 +38,13 @@ public class RobotController implements OnDetectionStateChangedListener {
     private Handler handler;
     private String robotId;
     private DatabaseReference robotRef;
-    Queue<Integer> queue = new LinkedList<>();
-
     private Map<Integer, String> robotIdToNameMap = new HashMap<>();
+
+    private String firstPosition;
+    public RobotController() {
+        robot.addOnMovementStatusChangedListener(this);
+    }
+
     private void initializeRobotNames(){
         robotIdToNameMap.put(1, "Stone1");
         robotIdToNameMap.put(2, "Stone2");
@@ -107,6 +107,7 @@ public class RobotController implements OnDetectionStateChangedListener {
                 }
             });
         }
+        setFirstPosition();
     }
 
 
@@ -132,26 +133,30 @@ public class RobotController implements OnDetectionStateChangedListener {
        }
     }
 
-    private void addActionToQueue(int stoneNumber, float angle, float distance, float time){
+    private synchronized void addActionToQueue(int stoneNumber, float angle, float distance, float time){
         Map<String, Object> actionData = new HashMap<>();
         actionData.put("robotNumber", stoneNumber);
         actionData.put("angle", angle);
         actionData.put("distance", distance);
-        actionData.put("time", time);
+        actionData.put("time", (double) time);
         actionQueue.offer(actionData);
         processNextAction();
     }
-
-    private void processNextAction(){
-        if (!actionQueue.isEmpty()) {
-            Map<String, Object> actionData = actionQueue.poll();
-            executeAction(actionData);
+    private void processNextAction() {
+        // Continue processing as long as there are actions in the queue
+        while (!actionQueue.isEmpty()) {
+            Map<String, Object> actionData = actionQueue.poll(); // Retrieve and remove the head of the queue
+            try {
+                executeAction(actionData); // Execute the action
+            } catch (Exception e) {
+                handleActionError(actionData, e); // Handle any errors
+            }
         }
     }
-    private PriorityQueue<Map<String,Object>> actionQueue = new PriorityQueue<>(
-            Comparator.comparingInt(a -> (Integer) a.get("time"))
+    private PriorityBlockingQueue<Map<String,Object>> actionQueue = new PriorityBlockingQueue<>(
+           10, Comparator.comparingDouble(a -> (Double) a.get("time"))
     );
-    private void executeAction(Map<String, Object> actionData){
+    private void executeAction(Map<String, Object> actionData) throws Exception {
         String stoneName = (String) actionData.get("stoneNumber");
         int angle = (Integer) actionData.get("angle");
         float distance = (Float) actionData.get("distance");
@@ -169,6 +174,10 @@ public class RobotController implements OnDetectionStateChangedListener {
             }
         }
         return null;
+    }
+    private void handleActionError(Map<String, Object> actionData, Exception e){
+        //오류 처리 구현(선택)
+        Log.e("RobotController", "에러가 동작중 발생" + actionData);
     }
     @Override
     public void onDetectionStateChanged(int state){
@@ -190,7 +199,42 @@ public class RobotController implements OnDetectionStateChangedListener {
     public String getCurrentStatus() {
         return String.format("Angle: %d, Distance: %.2f, Out: %b, Time: %d", angle, distance, out, time);
     }
+    public void setFirstPosition(){
+        Robot stone1Robot = getRobotInstanceByName("Stone1");
+        if (stone1Robot != null) {
+            List<String> locations = stone1Robot.getLocations();
+            if (locations != null && !locations.isEmpty()) {
+                firstPosition = locations.get(0);
+                Log.d("RobotController", "첫 위치 Stone1으로 설정" + firstPosition);
+            } else {
+                Log.e("RobotController", "첫 위치 설정 실패");
+            }
+        } else {
+            Log.e("RobotController", "Stone1 인스턴스 없음.");
+        }
+    }
 
-    // 기타 필요한 메서드 추가 가능
+    private int currentMovingStone = 0;
+    private void moveToFirstPositionSequentially(){
+        if (currentMovingStone < 6) {
+            currentMovingStone++;
+            String stoneName = "Stone" + currentMovingStone;
+            Robot stoneRobot = getRobotInstanceByName(stoneName);
+            if (stoneRobot != null) {
+                stoneRobot.goTo(firstPosition);
+            } else {
+                Log.e("RobotController", "로봇ID 오류" + stoneName);
+            }
+        }
+    }
+
+
+
+    @Override
+    public void onMovementStatusChanged(@NonNull String type, @NonNull String status) {
+        if (status == STATUS_START){
+            moveToFirstPositionSequentially();
+        }
+    }
 }
 

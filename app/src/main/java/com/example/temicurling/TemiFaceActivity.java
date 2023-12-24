@@ -1,11 +1,13 @@
 package com.example.temicurling;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
@@ -20,7 +22,9 @@ public class TemiFaceActivity extends AppCompatActivity {
     //    Mainactivity에 있던 내용 그대로 옮겨왔습니다.
     private String currentRobotId = null;
     private ValueEventListener currentListener = null;
+    private RobotController robotController;
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,7 +45,7 @@ public class TemiFaceActivity extends AppCompatActivity {
 
 //        selectRobot에 있던 내용입니다.
         currentRobotId = tempRobotId;
-        // Update the RobotController or Firebase listener to the new robotId
+        robotController = new RobotController();
         // You might need to reinitialize or update the existing RobotController
         setupFirebaseListeners(tempRobotId);
     }
