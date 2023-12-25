@@ -22,7 +22,8 @@ import com.robotemi.sdk.Robot;
 
 public class TemiFaceActivity extends AppCompatActivity {
     //    Mainactivity에 있던 내용 그대로 옮겨왔습니다.
-    private String currentRobotId = null;
+    private String currentRobotId;
+    private RobotController robotController;
     private ValueEventListener currentListener = null;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -79,7 +80,7 @@ public class TemiFaceActivity extends AppCompatActivity {
                         float angle = Float.parseFloat(angleString);
                         float distance = Float.parseFloat(distanceString);
                         boolean out = Boolean.parseBoolean(outString);
-                        long time = Long.parseLong(timeString);
+                        float time = Float.parseFloat(timeString);
 
                         // Implement the logic to act on the data
                         // ...

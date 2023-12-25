@@ -77,7 +77,7 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
     private void setupFirebaseListeners(){
         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
 
-        robotRef = FirebaseDatabase.getInstance().getReference("temi/" + robotId);
+        robotRef = FirebaseDatabase.getInstance().getReference("temi/");
         for (int i = 1; i <= 6; i++){
             final int robotNumber = i; // 로봇의 각 번호
             robotRef.child("Stone" + robotNumber).addValueEventListener(new ValueEventListener(){
@@ -88,21 +88,26 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
                         String distanceString = dataSnapshot.child("distance").getValue(String.class);
                         String outString = dataSnapshot.child("out").getValue(String.class);
                         String timeString = dataSnapshot.child("time").getValue(String.class);
+                        Log.d("RobotController", "angle:" + angleString);
+                        Log.d("RobotController", "distance:" + distanceString);
+                        Log.d("RobotController", "out:" + outString);
+                        Log.d("RobotController", "time:" + timeString);
 
                         if(angleString != null && distanceString != null && outString != null && timeString != null){
+                            Log.d("RobotController","Firebase 값 불러오기 성공");
                             float angle = Float.parseFloat(angleString.trim());
                             float distance = Float.parseFloat(distanceString.trim());
                             boolean out = Boolean.parseBoolean(outString.trim());
                             float time = Float.parseFloat(timeString.trim());
+
+                            if(time > 0 && distance > 0){
+                                addActionToQueue(robotNumber, angle, distance, time);
+                                if(out){
+                                    resetPosition(robotNumber);
+                                }
+                            }
                         } else{
                             Log.e("RobotController", "Firebase 값을 불러왔으나 null");
-                        }
-
-
-                        if (out) {
-                            resetPosition(robotNumber); // Reset position for specific robot
-                        } else {
-                            addActionToQueue(robotNumber, angle, distance, time);
                         }
                     } catch (NumberFormatException e){
                         Log.e("RobotController", "Error parsing Firebase data", e);
@@ -134,10 +139,12 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
         return (int)(distance * 1000);
     }
 
-    private void rotateRobot(String stoneName, int angle){
+    private void rotateRobot(String stoneName, float angle){
        Robot specificRobot = getRobotInstanceByName(stoneName);
+
        if(specificRobot != null){
-           specificRobot.turnBy(angle, 1.0f);
+           int intAngle = Math.round(angle);
+           specificRobot.turnBy(intAngle, 1.0f);
        }
     }
 
@@ -171,11 +178,12 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
     );
     private void executeAction(Map<String, Object> actionData) throws Exception {
         String stoneName = (String) actionData.get("stoneNumber");
-        int angle = (Integer) actionData.get("angle");
-        float distance = (Float) actionData.get("distance");
-
-        rotateRobot(stoneName, angle);
-        forwardAction.moveForwardForDuration(convertDistanceToDurationMillis(distance));
+        Float distance = (Float) actionData.get("distance");
+        Float time = (Float) actionData.get("time");
+        if(distance != null && !distance.isNaN() && time != null && !time.isNaN() && distance > 0 && time > 0){
+            rotateRobot(stoneName, angle);
+            forwardAction.moveForwardForDuration(convertDistanceToDurationMillis(distance));
+        }
     }
 
     @Nullable
