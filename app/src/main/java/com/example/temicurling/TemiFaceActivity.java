@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -17,12 +18,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.robotemi.sdk.Robot;
 
 public class TemiFaceActivity extends AppCompatActivity {
     //    Mainactivity에 있던 내용 그대로 옮겨왔습니다.
     private String currentRobotId = null;
     private ValueEventListener currentListener = null;
-    private RobotController robotController;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
@@ -45,7 +46,9 @@ public class TemiFaceActivity extends AppCompatActivity {
 
 //        selectRobot에 있던 내용입니다.
         currentRobotId = tempRobotId;
-        robotController = new RobotController();
+        Robot robot = Robot.getInstance();
+        Handler handler = new Handler();
+        RobotController robotController = new RobotController(handler, robot);
         // You might need to reinitialize or update the existing RobotController
         setupFirebaseListeners(tempRobotId);
     }

@@ -41,10 +41,6 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
     private Map<Integer, String> robotIdToNameMap = new HashMap<>();
 
     private String firstPosition;
-    public RobotController() {
-        robot.addOnMovementStatusChangedListener(this);
-    }
-
     private void initializeRobotNames(){
         robotIdToNameMap.put(1, "Stone1");
         robotIdToNameMap.put(2, "Stone2");
@@ -61,8 +57,6 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
 
     public RobotController(Handler handler, Robot robot) {
         this.robot = robot;
-        this.robotId = robotId;
-        this.robots = robots;
         this.handler = handler;
         this.forwardAction = new ForwardAction(handler, robot);
         initializeRobotNames();
@@ -154,7 +148,12 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
         }
     }
     private PriorityBlockingQueue<Map<String,Object>> actionQueue = new PriorityBlockingQueue<>(
-           10, Comparator.comparingDouble(a -> (Double) a.get("time"))
+            10, new Comparator<Map<String, Object>>() {
+        @Override
+        public int compare(Map<String, Object> a, Map<String, Object> b) {
+            return Double.compare((Double) a.get("time"), (Double) b.get("time"));
+        }
+    }
     );
     private void executeAction(Map<String, Object> actionData) throws Exception {
         String stoneName = (String) actionData.get("stoneNumber");
