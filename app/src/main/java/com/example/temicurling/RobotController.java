@@ -101,7 +101,7 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
                             float time = Float.parseFloat(timeString.trim());
 
                             if(time > 0 && distance > 0){
-                                addActionToQueue(robotNumber, angle, distance, time);
+                                addActionToQueue("Stone" + robotNumber, angle, distance, time);
                                 if(out){
                                     resetPosition(robotNumber);
                                 }
@@ -123,48 +123,41 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
         setFirstPosition();
     }
 
-
-    // 로봇의 움직임을 시작하는 메서드
-    public void startMovement(int durationMillis) {
-        forwardAction.moveForwardForDuration(durationMillis);
-    }
-
     public void resetPosition(int robotNumber) {
         robot.goTo("home base");
     }
 
     // distance 를 durationMillis로 바꾸는 메소드
-    private int convertDistanceToDurationMillis(float distance){
+    private float convertDistanceToDurationMillis(float distance){
         //공식은 바뀔 수 있음. 일단 distance 10은 10초간 이동하는 것으로 대입
-        return (int)(distance * 1000);
+        return distance * 1000;
     }
 
     private void rotateRobot(String stoneName, float angle){
        Robot specificRobot = getRobotInstanceByName(stoneName);
 
        if(specificRobot != null){
-           int intAngle = Math.round(angle);
+           int intAngle = Math.round(angle) - 90;
            specificRobot.turnBy(intAngle, 1.0f);
        }
     }
 
-    private synchronized void addActionToQueue(int stoneNumber, float angle, float distance, float time){
+    private synchronized void addActionToQueue(String robotName, float angle, float distance, float time){
         Map<String, Object> actionData = new HashMap<>();
-        actionData.put("robotNumber", stoneNumber);
+        actionData.put("robotName", robotName);
         actionData.put("angle", angle);
         actionData.put("distance", distance);
-        actionData.put("time", (double) time);
+        actionData.put("time", (float) time);
         actionQueue.offer(actionData);
         processNextAction();
     }
     private void processNextAction() {
-        // Continue processing as long as there are actions in the queue
-        while (!actionQueue.isEmpty()) {
-            Map<String, Object> actionData = actionQueue.poll(); // Retrieve and remove the head of the queue
-            try {
-                executeAction(actionData); // Execute the action
-            } catch (Exception e) {
-                handleActionError(actionData, e); // Handle any errors
+        if(!actionQueue.isEmpty()){
+            Map<String, Object> actionData = actionQueue.poll();
+            try{
+                executeAction(actionData);
+            } catch(Exception e){
+                handleActionError(actionData, e);
             }
         }
     }
@@ -177,12 +170,25 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
     }
     );
     private void executeAction(Map<String, Object> actionData) throws Exception {
-        String stoneName = (String) actionData.get("stoneNumber");
+        String robotName = (String) actionData.get("robotName");
         Float distance = (Float) actionData.get("distance");
+        Float angle = (Float) actionData.get("angle");
         Float time = (Float) actionData.get("time");
+
+        if(robotName == null){
+            Log.e("RobotController", "robotName이 null이거나 없음" +robotName);
+            return;
+        }
+        if(angle != null && !angle.isNaN()){
+            rotateRobot(robotName, angle);
+        } else{
+            Log.e("RobotController", "Invalid or null angle: " + angle);
+        }
         if(distance != null && !distance.isNaN() && time != null && !time.isNaN() && distance > 0 && time > 0){
-            rotateRobot(stoneName, angle);
+            Log.d("RObotController", "forwardAction 수행시작 " + distance);
             forwardAction.moveForwardForDuration(convertDistanceToDurationMillis(distance));
+        } else{
+            Log.e("RobotController", "distance, time 값 오류" + distance + "/" + time);
         }
     }
 
@@ -220,7 +226,7 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
                 robot.stopMovement();
                 robot.turnBy(angle, 1.0F);
 
-                int durationMillis = convertDistanceToDurationMillis(distance);
+                float durationMillis = convertDistanceToDurationMillis(distance);
                 handler.postDelayed(() -> forwardAction.moveForwardForDuration(durationMillis), 5000);
                 break;
 
