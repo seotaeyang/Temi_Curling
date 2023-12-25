@@ -52,6 +52,15 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
 
     private Map<Integer, Robot> robots = new HashMap<>();
 
+    private void initializeAndAddStone1(){
+        Robot stone1Robot = Robot.getInstance();
+        if(stone1Robot != null){
+            robots.put(1, stone1Robot);
+            Log.d("RobotController", "Stone1 로봇 Initialize 성공");
+        } else{
+            Log.e("RobotController", "Stone1 로봇 Initialize 실패");
+        }
+    }
 
     // 로봇과의 통신을 위한 메서드 및 변수
 
@@ -60,6 +69,7 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
         this.handler = handler;
         this.forwardAction = new ForwardAction(handler, robot);
         initializeRobotNames();
+        initializeAndAddStone1();
         robot.addOnDetectionStateChangedListener(this);
         setupFirebaseListeners();
     }
@@ -79,10 +89,14 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
                         String outString = dataSnapshot.child("out").getValue(String.class);
                         String timeString = dataSnapshot.child("time").getValue(String.class);
 
-                        float angle = Float.parseFloat(angleString);
-                        float distance = Float.parseFloat(distanceString);
-                        boolean out = Boolean.parseBoolean(outString);
-                        float time = Float.parseFloat(timeString);
+                        if(angleString != null && distanceString != null && outString != null && timeString != null){
+                            float angle = Float.parseFloat(angleString.trim());
+                            float distance = Float.parseFloat(distanceString.trim());
+                            boolean out = Boolean.parseBoolean(outString.trim());
+                            float time = Float.parseFloat(timeString.trim());
+                        } else{
+                            Log.e("RobotController", "Firebase 값을 불러왔으나 null");
+                        }
 
 
                         if (out) {
@@ -164,13 +178,26 @@ public class RobotController implements OnDetectionStateChangedListener, OnMovem
         forwardAction.moveForwardForDuration(convertDistanceToDurationMillis(distance));
     }
 
-
     @Nullable
-    private Robot getRobotInstanceByName(String stoneName){
-        for (Map.Entry<Integer, String> entry : robotIdToNameMap.entrySet()){
-            if (entry.getValue().equals(stoneName)){
-                return robots.get(entry.getKey());
+    private Robot getRobotInstanceByName(String stoneName) {
+        Integer robotId = null;
+        for (Map.Entry<Integer, String> entry : robotIdToNameMap.entrySet()) {
+            if (entry.getValue().equals(stoneName)) {
+                robotId = entry.getKey();
+                break;
             }
+        }
+
+        // If an ID was found, try to retrieve the corresponding Robot instance.
+        if (robotId != null) {
+            Robot robot = robots.get(robotId);
+            if (robot != null) {
+                return robot;
+            } else {
+                Log.e("RobotController", "Robot instance not found for ID: " + robotId);
+            }
+        } else {
+            Log.e("RobotController", "No ID found for robot name: " + stoneName);
         }
         return null;
     }
